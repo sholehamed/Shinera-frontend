@@ -2,12 +2,20 @@ import { expect, test } from '@playwright/test';
 
 const api = 'http://127.0.0.1:5069/api/system';
 
-test('anonymous callers cannot access System management data', async ({ request }) => {
+test('anonymous callers cannot access any of the 12 privileged System groups', async ({ request }) => {
   for (const path of [
     '/Dashboard/super-dashboard',
     '/Tenants/00000000-0000-0000-0000-000000000001',
     '/Users/00000000-0000-0000-0000-000000000001',
     '/Roles/lookup',
+    '/ApiResources/lookup',
+    '/UiResources/lookup',
+    '/Groups/lookup',
+    '/MenuCategories/list',
+    '/Menus/getUserMenus?roleId=00000000-0000-0000-0000-000000000001',
+    '/Modules/lookup',
+    '/Permissions/lookup',
+    '/Resources/lookup',
   ]) {
     const response = await request.get(api + path);
     expect(response.status(), path).toBe(401);
