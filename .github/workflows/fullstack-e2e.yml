@@ -29,6 +29,7 @@ jobs:
       DataBaseServer: '127.0.0.1,1433'
       DataBaseUsername: sa
       DataBasePassword: 'ShineraE2E_LocalOnly_2026!'
+      Cors: 'http://127.0.0.1:4200'
 
     steps:
       - name: Checkout frontend
