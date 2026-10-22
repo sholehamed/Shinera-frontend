@@ -57,7 +57,11 @@ export class TokenStorageService {
        return localStorage.getItem(Sub);
   }
   clear(): void {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    for (const key of [
+      ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, Tenant, TenantId,
+      AccountType, FullName, Picure, Username, Sub,
+    ]) {
+      localStorage.removeItem(key);
+    }
   }
 }
