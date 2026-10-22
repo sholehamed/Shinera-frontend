@@ -44,8 +44,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: sholehamed/Shinera-backend
-          # Temporarily check the backend feature branch until its PR is merged.
-          ref: security/identity-token-lifecycle-20261022
           path: backend
 
       - name: Setup .NET 10
