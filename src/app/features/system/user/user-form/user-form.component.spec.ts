@@ -23,6 +23,6 @@ describe('UserFormComponent', () => {
 
     expect(fixture.componentInstance).toBeTruthy();
     expect(fixture.componentInstance.form.invalid).toBe(true);
-    expect(fixture.componentInstance.form.controls.firstName.hasError('required')).toBe(true);
+    expect(fixture.componentInstance.form.controls['firstName'].hasError('required')).toBe(true);
   });
 });
