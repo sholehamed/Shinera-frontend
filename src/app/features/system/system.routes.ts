@@ -1,0 +1,79 @@
+import { Routes } from '@angular/router';
+import { PanelLayoutComponent } from '../../shared/layouts/dashboard-layout/panel-layout.component';
+import { SignInComponent } from '../../shared/pages/auth/sign-in/sign-in.component';
+
+export default [
+  {
+    path: '',
+    component: PanelLayoutComponent,
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'dashboard',
+      },
+      {
+        path: 'users',
+        loadChildren: () => import('./user/users.routes'),
+        data: { breadcrumb: 'مدیریت کاربران' },
+      },
+      {
+        path: 'roles',
+        loadChildren: () => import('./role/roles.routes'),
+        data: { breadcrumb: 'مدیریت نقش‌ها' },
+      },
+      {
+        path: 'groups',
+        loadChildren: () => import('./group/groups.routes'),
+        data: { breadcrumb: 'گروه‌های کاربری' },
+      },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./system-dashboard/system-dashboard.component').then(
+            (x) => x.SystemDashboardComponent,
+          ),
+      },
+      {
+        path: 'tenants',
+        loadChildren: () => import('./tenants/tenants.routes'),
+        data: { breadcrumb: 'مدیریت مستاجرها' },
+      },
+      {
+        path: 'modules',
+        loadChildren: () => import('./modules/modules.routes'),
+        data: { breadcrumb: 'مدیریت ماژول ها' },
+      },
+      {
+        path: 'permissions',
+        loadChildren: () => import('./resources/permissions/permissions.routes'),
+        data: { breadcrumb: 'مدیریت مجوز ها' },
+      },
+      {
+        path: 'api-resources',
+        loadChildren: () => import('./resources/api-resources/api-resources.routes'),
+        data: { breadcrumb: 'مدیریت منابع سرویس ها' },
+      },
+      {
+        path: 'ui-resources',
+        loadChildren: () => import('./resources/ui-resources/ui-resources.routes'),
+        data: { breadcrumb: 'مدیریت منابع صفحات ها' },
+      },
+      {
+        path: 'resources',
+        loadChildren: () => import('./resources/resources.routes'),
+        data: { breadcrumb: 'مدیریت منابع' },
+      },
+      {
+        path: 'menu-management',
+        loadComponent: () =>
+          import('./menu-management/menu-management.component').then((x) => x.MenuManagementPage),
+        data: { breadcrumb: 'مدیریت منو' },
+      },
+    ],
+  },
+  {
+    path: 'auth',
+    children: [{ path: 'login', component: SignInComponent, data: { login_context: 'system' } }],
+  },
+] as Routes;
