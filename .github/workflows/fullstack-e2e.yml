@@ -40,7 +40,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: sholehamed/Shinera-backend
-          ref: security/identity-system-hardening-20261022
           path: backend
 
       - name: Setup .NET 10
