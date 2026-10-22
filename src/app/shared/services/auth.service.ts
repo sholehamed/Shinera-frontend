@@ -91,8 +91,13 @@ export class AuthService {
 );
   }
   CallUserInfo() {
-    this._http.get<UserInfo>(environment.apiUrl + '/system/Auth/userinfo').subscribe((d) => {
-      this.saveUserInfo(d);
+    const accessToken = this.getAccessToken();
+    if (!accessToken) return;
+    this._http.get<UserInfo>(environment.apiUrl + '/system/Auth/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }).subscribe({
+      next: (info) => this.saveUserInfo(info),
+      error: () => this._tokenStorage.clear(),
     });
   }
   getAccessToken(): string | null {
@@ -104,8 +109,7 @@ export class AuthService {
   }
 
   saveTokens(tokens: AuthTokens): void {
-    debugger;
-    this._tokenStorage.setTokens(tokens.access_token, tokens.refresh_token!);
+    this._tokenStorage.setTokens(tokens.access_token, tokens.refresh_token ?? this.getRefreshToken() ?? '');
     this.CallUserInfo();
   }
   saveUserInfo(info: UserInfo) {
@@ -151,9 +155,20 @@ export class AuthService {
   }
 
   logout(): void {
+    const refreshToken = this.getRefreshToken();
+
+    // Clearing local state must never depend on the server being reachable.
+    // This best-effort OAuth revocation prevents reuse of the refresh token.
     this._tokenStorage.clear();
-    // اینجا می‌تونی redirect هم انجام بدی
-    // مثال:
-    // this.router.navigate(['/login']);
+
+    if (!refreshToken) return;
+
+    const body = new HttpParams()
+      .set('client_id', environment.client_id)
+      .set('token', refreshToken)
+      .set('token_type_hint', 'refresh_token');
+
+    this._http.post(environment.apiUrl + '/system/Auth/revoke', body)
+      .subscribe({ error: () => { /* Local session has already been cleared. */ } });
   }
 }

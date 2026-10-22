@@ -27,6 +27,10 @@ jobs:
       CI: 'true'
       ASPNETCORE_ENVIRONMENT: Development
       Identity__AllowInsecureHttpForE2E: 'true'
+      Identity__E2E__Enabled: 'true'
+      Identity__E2E__CaptchaCode: 'ABCDE'
+      SHINERA_DEVELOPMENT_ADMIN_PASSWORD: 'E2E-Only-Disposable-Admin-2026!'
+      E2E_ADMIN_PASSWORD: 'E2E-Only-Disposable-Admin-2026!'
       DataBaseServer: '127.0.0.1,1433'
       DataBaseUsername: sa
       DataBasePassword: 'ShineraE2E_LocalOnly_2026!'
