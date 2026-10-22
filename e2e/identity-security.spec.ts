@@ -36,7 +36,6 @@ test('malformed CAPTCHA is refused by the token endpoint', async ({ request }) =
   });
   expect(response.status()).toBe(400);
   const body = await response.json();
-  console.log('CAPTCHA_TOKEN_RESPONSE:', JSON.stringify(body));
   expect(body.error).toBe('invalid_grant');
 });
 
