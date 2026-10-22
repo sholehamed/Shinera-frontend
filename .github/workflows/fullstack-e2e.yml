@@ -26,6 +26,7 @@ jobs:
     env:
       CI: 'true'
       ASPNETCORE_ENVIRONMENT: Development
+      Identity__AllowInsecureHttpForE2E: 'true'
       DataBaseServer: '127.0.0.1,1433'
       DataBaseUsername: sa
       DataBasePassword: 'ShineraE2E_LocalOnly_2026!'
