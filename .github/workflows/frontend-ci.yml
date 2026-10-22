@@ -1,0 +1,44 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout frontend
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build Angular (development configuration)
+        run: npm run build -- --configuration development
+
+      - name: Run existing Angular/Vitest tests
+        run: npm run test:unit
+
+      - name: Publish coverage and test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-artifacts
+          path: |
+            coverage/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7

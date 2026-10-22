@@ -1,0 +1,74 @@
+name: Full-stack E2E (Angular + .NET + SQL Server)
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  playwright-fullstack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_SA_PASSWORD: 'ShineraE2E_LocalOnly_2026!'
+          MSSQL_PID: Developer
+        ports:
+          - 1433:1433
+
+    env:
+      CI: 'true'
+      ASPNETCORE_ENVIRONMENT: Development
+      DataBaseServer: '127.0.0.1,1433'
+      DataBaseUsername: sa
+      DataBasePassword: 'ShineraE2E_LocalOnly_2026!'
+
+    steps:
+      - name: Checkout frontend
+        uses: actions/checkout@v4
+
+      - name: Checkout public backend
+        uses: actions/checkout@v4
+        with:
+          repository: sholehamed/Shinera-backend
+          path: backend
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Restore backend
+        run: dotnet restore backend/backend-shinera.slnx
+
+      - name: Install frontend and Playwright
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium and OS dependencies
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser + API tests against real .NET and SQL Server
+        run: npm run test:e2e
+
+      - name: Upload Playwright report and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-fullstack-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14
