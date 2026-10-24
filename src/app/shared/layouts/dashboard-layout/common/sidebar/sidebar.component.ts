@@ -113,7 +113,7 @@ export class SidebarComponent implements OnInit {
         const existing = new Set<string>();
         const collect = (items: MenuCategoryDto[ 'items' ]) => {
             for (const item of items) {
-                if (item.route) existing.add(item.route.replace(/\\/$/, '').toLowerCase());
+                if (item.route) existing.add((item.route.endsWith('/') ? item.route.slice(0, -1) : item.route).toLowerCase());
                 collect(item.childs ?? []);
             }
         };
