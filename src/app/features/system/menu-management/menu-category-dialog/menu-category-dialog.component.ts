@@ -1,4 +1,4 @@
-import { Component, Inject, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -49,7 +49,7 @@ export class MenuCategoryDialogComponent {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(MenuApiService);
   private readonly dialogRef = inject(MatDialogRef<MenuCategoryDialogComponent>);
-  constructor(@Inject(MAT_DIALOG_DATA) readonly data: MenuCategoryDto | null) {}
+  readonly data = inject<MenuCategoryDto | null>(MAT_DIALOG_DATA, { optional: true });
   form = this.fb.group({
     title: [this.data?.title ?? '', [Validators.required, Validators.maxLength(150)]],
     order: [this.data?.order ?? 1, [Validators.required, Validators.min(1)]],
