@@ -3,7 +3,7 @@
 <app-grid #grid
   [columns]="columns"
   [data]="list()"
-  [enableActions]="true"
+  [enableActions]="false"
   [enableSelection]="true"
   (selectedIdsChange)="idsChanged($event)"
   (queryChange)="loadUsers($event)"
@@ -21,23 +21,13 @@
 <ng-template [gridHeaderFilterTemplate]="'userName'">
     <app-text-filter [grid]="grid" field="userName" label="جستجوی  نام کاربری"></app-text-filter>
 </ng-template>
-<ng-template [gridCellTemplate]="'isActive'" let-value="value" let-row="row">
-    <app-cell-toggle (toggleChanged)="changeState(row.id)"  [value]="value" ></app-cell-toggle>
+<ng-template [gridCellTemplate]="'isActive'" let-value="value">
+    {{ value ? 'فعال' : 'غیرفعال' }}
 </ng-template>
-<ng-template [gridCellTemplate]="'isLockedOut'" let-value="value" let-row="row">
-    <app-cell-toggle (toggleChanged)="changeLockState(row.id)"  [value]="value" ></app-cell-toggle>
+<ng-template [gridCellTemplate]="'isLockedOut'" let-value="value">
+    {{ value ? 'قفل' : 'باز' }}
 </ng-template>
  <ng-template #HeaderActions>
-                 @if(dialogData&& dialogData.isModal==false){
-                 <button 
-                        class="add-btn refined-add-btn"
-                        type="button"
-                        routerLink="create"
-                        mat-button>
-                        <i class="material-symbols-outlined">add</i>
-                        جدید
-                    </button>
-             }
               @if(dialogData&& dialogData.isModal==true){
                  <button 
                         class="add-btn refined-add-btn"
