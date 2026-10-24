@@ -16,11 +16,11 @@ export class MenuApiService {
   }
 
   updateCategory(id: string, command: Partial<MenuCategoryCreateCommand>) {
-    return this.http.put<void>(environment.apiUrl+`/system/MenuCategories/${id}`, command);
+    return this.http.put<void>(environment.apiUrl+'/system/MenuCategories', { ...command, id });
   }
 
   reorderCategories(command: MenuCategoryReorderCommand) {
-    return this.http.put<void>(environment.apiUrl+'/system/MenuCategories/reorder', command);
+    throw new Error('Category reorder API is not implemented on the backend');
   }
 
   getMenusByCategory(categoryId: string) {
