@@ -9,13 +9,21 @@
 | Tenant list / create / edit | KEEP + FIX | Real `Tenants/pagedList`, `Tenants/{id}`, POST/PUT; corrected obsolete back link |
 | Tenant overview | KEEP + IMPLEMENT | Real `GET /system/Tenants/{id}`; replaces scaffold text |
 | Tenant detail Users/Roles/Groups/Permissions/Settings | DELETE | All five were standalone empty generated placeholders (`... works!`); no backend tenant-scoped business operations. Their UI links/routes/specs removed |
-| System users | KEEP + FIX | Existing list and form use real `Users` endpoints; removed debugger, guard invalid form. Detailed validation/role grant UI remains a separate follow-up |
+| System users | KEEP DIRECTORY; DISABLE CREATE/EDIT | Directory reads actual `Users/pagedList`. Create/Edit routes and list actions intentionally disabled: backend `UserCreate` sets a hardcoded non-null TenantId and `UserUpdate` always changes PasswordHash; neither is safe for System accounts. User form source retained pending corrected backend identity contract |
 | System roles | KEEP + IMPLEMENT | List and RolePermission tree already had API backing. Create/Edit were empty placeholders: now live POST/PUT and correct route ID |
 | System groups/membership | KEEP + FIX | Live `Groups` endpoints; exact member IDs now returned, list POST uses paging body, DELETE per `groupId/userId` (audited); do not invent bulk DELETE |
 | Module / Resource / API Resource / Permission CRUD | KEEP | Existing non-placeholder list/form implementations; need deeper browser CRUD coverage in later slices |
 | UI Resource | KEEP + FIX | Correct `/system/UiResources/` path from old `/Identity/UiResources/` |
 | Menu management | KEEP + FIX | Live Menu/Category endpoints; fix category dialog state, URL verbs. Category reorder not implemented by backend, explicitly unavailable (do not fake persistence) |
 | Dynamic navigation | KEEP + FALLBACK | Existing menu permission filtering retained. If legacy menu seed is empty, explicit system-only navigation fallback shows real routes; backend remains authorization authority |
+
+## CI evidence on final reviewed branch (2026-10-24)
+
+- [Frontend CI #40092435121](https://github.com/sholehamed/Shinera-frontend/actions/runs/40092435121) **passed** at frontend head `aea2f27dd911c7daceaac4adb60198a621a6c86a`: Angular build and **15/15 Vitest unit cases**, including 3 interceptor regression cases.
+- [Full-stack E2E #40092435108](https://github.com/sholehamed/Shinera-frontend/actions/runs/40092435108) **passed** on that exact frontend head: **16/16 Playwright cases** against real ASP.NET Core and disposable SQL Server. Explicit positive System login, protected dashboard, tenant paging, browser Role CRUD and direct MenuCategory CRUD.
+- [Backend Build/Unit #40091066192](https://github.com/sholehamed/Shinera-backend/actions/runs/40091066192) and [Backend real SQL Server security #40091066164](https://github.com/sholehamed/Shinera-backend/actions/runs/40091066164) both **passed** at backend PR #32 head `ca1d408ea02c5eefd5fcba7810f19928369cd6cd`.
+- The frontend E2E workflow currently pins the **backend Draft PR #32 branch**. Once backend #32 merges, pin it back to `main` and recheck fullstack E2E on the integration head before frontend merge.
+- These results establish tested flows only: not every legacy CRUD screen, real Production setup or commercial readiness. **Both PRs remain Draft/unmerged.**
 
 ## API integration and tests
 
@@ -27,11 +35,11 @@ The frontend now registers a functional interceptor that only attaches current a
 
 ## Deferred (explicitly not claimed done)
 
-- User create/edit passwords and role assignment management UX; form-level errors and server validation
+- System User create/edit: safely model System User with `TenantId=null`, choose correct `UserType.System`, avoid forced password reset on edit, add authorization and API/E2E coverage; only then restore protected frontend routes and actions. Role assignment management UX, validation and granular error handling remain.
 - Category drag reorder (missing backend contract)
 - Broad Tenant-specific member management (new domain model, not System-admin placeholders)
 - Real production admin bootstrap/feature-cutover and live customer deployment
 - More browser CRUD E2E: Modules, Resources, Permissions, GroupMembers, Menu UI
 - Dynamic menu ownership and access for non-SuperAdmin System users
 
-The branch is **Draft** until latest frontend Build/Unit and cross-repository real SQL Server E2E are green, and final review is requested. No Production mutations.
+Both latest frontend Build/Unit and fullstack E2E are **green**. The branch remains **Draft pending final cross-repository review and explicit merge authorization**, including a second run after restoring the E2E backend checkout to `main`. No Production mutations.
