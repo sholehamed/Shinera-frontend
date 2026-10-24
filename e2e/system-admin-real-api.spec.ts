@@ -227,10 +227,24 @@ test('access-management menu links to real global Permission/API/UI resources; d
       expect.objectContaining({ type: 'UI', id: uiId })
     ]));
   } finally {
-    // Delete child grants first; these disposable fixtures never target Production.
+    // SQL Server intentionally forbids deleting Permission while it still has
+    // API/UI link references. Remove links through the supported audited PUT
+    // contract before deleting the permission and its resource fixtures.
+    const permission = created.find(item => item.endpoint === 'Permissions');
+    const resource = created.find(item => item.endpoint === 'Resources');
+    if (permission && resource) {
+      const unlink = await request.put(`${api}/Permissions/${permission.id}`, {
+        headers, data: {
+          resourceId: resource.id, code: 'E2EACCESS.' + unique,
+          name: 'E2E permission edited', isActive: true, permissionResources: []
+        }
+      });
+      expect(unlink.status(), await unlink.text()).toBe(204);
+    }
     for (const { endpoint, id } of created.reverse()) {
       const deleted = await request.delete(`${api}/${endpoint}/${id}`, { headers });
-      expect([200, 204]).toContain(deleted.status());
+      expect([200, 204], `${endpoint} ${id}: ${await deleted.text()}`)
+        .toContain(deleted.status());
     }
   }
 });
