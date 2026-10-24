@@ -32,13 +32,6 @@ export class UserGroupApi {
     page: number; pageSize: number;
     sort?: string; dir?: 'asc' | 'desc';
   }): Observable<PagedList> {
-    let params = new HttpParams()
-      .set('pageNumber', req.page)
-      .set('pageSize', req.pageSize);
-
-    // if (req.search) params = params.set('search', req.search);
-    // if (req.sort) params = params.set('sort', req.sort).set('dir', req.dir ?? 'asc');
-
     return this.http.post<PagedList>(environment.apiUrl+ `/system/groups/${groupId}/members`, {
       pageNumber: req.page, pageSize: req.pageSize, search: req.search ?? ''
     });
