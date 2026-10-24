@@ -67,9 +67,9 @@ userForm = new FormGroup({
   key: new FormControl('', {nonNullable: true,validators: [Validators.required],}),
     title: new FormControl('', {nonNullable: true,validators: [Validators.required],}),
     description: new FormControl('', {nonNullable: false,validators: [],}),
-    httpMethod: new FormControl('', {nonNullable: false,validators: [],}),
+    httpMethod: new FormControl<number | null>(null, {validators: [Validators.required],}),
     routeTemplate: new FormControl('', {nonNullable: false,validators: [],}),
-    source: new FormControl('', {nonNullable: true,validators: [Validators.required],}),
+    source: new FormControl(1, {nonNullable: true,validators: [Validators.required],}),
     allowAnonymous: new FormControl(false, {nonNullable: true,validators: [Validators.required],}),
     isActive: new FormControl(true, {nonNullable: true,validators: [Validators.required],},),
     isDeprecated: new FormControl(false, {nonNullable: true,validators: [Validators.required],},),
@@ -77,6 +77,7 @@ userForm = new FormGroup({
 );
  
   Submit(){
+    if (this.userForm.invalid) { this.userForm.markAllAsTouched(); return; }
     if(!this.update){
       this.service.create(this.userForm).subscribe({
         next:value=>{

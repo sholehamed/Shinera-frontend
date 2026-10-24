@@ -1,11 +1,13 @@
 import { Routes } from '@angular/router';
 import { PanelLayoutComponent } from '../../shared/layouts/dashboard-layout/panel-layout.component';
 import { SignInComponent } from '../../shared/pages/auth/sign-in/sign-in.component';
+import { systemSessionGuard } from '../../shared/guards/system-session.guard';
 
 export default [
   {
     path: '',
     component: PanelLayoutComponent,
+    canActivate: [systemSessionGuard],
     children: [
       {
         path: '',

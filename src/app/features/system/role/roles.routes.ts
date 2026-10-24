@@ -15,7 +15,7 @@ export default [
     data: { breadcrumb: ' نقش جدید' }
   },
   {
-    path: ':userId/edit',canDeactivate:[unsavedChangesGuard],
+    path: ':roleId/edit',canDeactivate:[unsavedChangesGuard],
     loadComponent: () =>
       import('./role-form/role-form.component').then(x => x.RoleFormComponent),
     data: { breadcrumb: 'ویرایش  نقش' }

@@ -1,4 +1,4 @@
-import { Component, Inject, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -23,7 +23,7 @@ import { MenuCategoryDto } from '../menu-management.model';
     MatSlideToggleModule
   ],
   template: `
-    <h2 mat-dialog-title>{{ data! ? 'ویرایش دسته‌بندی' : 'دسته‌بندی جدید' }}</h2>
+    <h2 mat-dialog-title>{{ data ? 'ویرایش دسته‌بندی' : 'دسته‌بندی جدید' }}</h2>
     <mat-dialog-content [formGroup]="form">
       <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 8px;">
         <mat-form-field appearance="outline">
@@ -49,14 +49,11 @@ export class MenuCategoryDialogComponent {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(MenuApiService);
   private readonly dialogRef = inject(MatDialogRef<MenuCategoryDialogComponent>);
-   data=signal<MenuCategoryDto|undefined>(undefined )
-  constructor(@Inject(MAT_DIALOG_DATA)  data: MenuCategoryDto | null) {
-    this.data
-  }
+  readonly data = inject<MenuCategoryDto | null>(MAT_DIALOG_DATA, { optional: true });
   form = this.fb.group({
-    title: [this.data()?.title ?? '', [Validators.required, Validators.maxLength(150)]],
-    order: [this.data()?.order ?? 1, [Validators.required, Validators.min(1)]],
-    isActive: [this.data()?.isActive ?? true]
+    title: [this.data?.title ?? '', [Validators.required, Validators.maxLength(150)]],
+    order: [this.data?.order ?? 1, [Validators.required, Validators.min(1)]],
+    isActive: [this.data?.isActive ?? true]
   });
 
 
@@ -71,7 +68,7 @@ export class MenuCategoryDialogComponent {
     };
 
     if (this.data) {
-      this.api.updateCategory(this.data()!.id, payload).subscribe(() => this.dialogRef.close(true));
+      this.api.updateCategory(this.data.id, payload).subscribe(() => this.dialogRef.close(true));
     } else {
       this.api.createCategory(payload).subscribe(() => this.dialogRef.close(true));
     }

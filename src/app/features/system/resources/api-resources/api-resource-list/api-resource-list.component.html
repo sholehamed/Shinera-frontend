@@ -21,10 +21,10 @@
     <app-cell-toggle (toggleChanged)="changeState(row.id)"  [value]="value" ></app-cell-toggle>
 </ng-template>
 <ng-template [gridCellTemplate]="'isDeprecated'" let-value="value" let-row="row">
-    <app-cell-toggle (toggleChanged)="changeState(row.id)"  [value]="value" ></app-cell-toggle>
+    {{ value ? 'بله' : 'خیر' }}
 </ng-template>
 <ng-template [gridCellTemplate]="'requiresAuth'" let-value="value" let-row="row">
-    <app-cell-toggle (toggleChanged)="changeState(row.id)"  [value]="value" ></app-cell-toggle>
+    {{ value ? 'بله' : 'خیر' }}
 </ng-template>
  <ng-template #HeaderActions>
             <button
@@ -36,6 +36,7 @@
                     جدید
                 </button>
                 <button
+                    *ngIf="resourceId"
                     class="add-btn refined-add-btn"
                     type="button"
                     (click)="sync()"
@@ -56,7 +57,7 @@
 
         <mat-menu #actionMenu="matMenu" class="card-header-menu" xPosition="before">
             <button mat-menu-item [routerLink]="row.id+'/edit'" type="button">ویرایش</button>
-            <button mat-menu-item type="button">حذف</button>
+            <button mat-menu-item type="button" (click)="remove(row.id)">حذف</button>
         </mat-menu>
     </ng-template>
 </app-grid>

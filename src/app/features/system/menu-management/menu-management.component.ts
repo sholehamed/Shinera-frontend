@@ -172,23 +172,9 @@ export class MenuManagementPage implements OnInit {
     this.selectedMenu.set(null);
   }
 
-  dropCategory(event: CdkDragDrop<MenuCategoryDto[]>) {
-    const items = [...this.categories()];
-    moveItemInArray(items, event.previousIndex, event.currentIndex);
-
-    const reordered = items.map((item, index) => ({
-      ...item,
-      order: index + 1,
-    }));
-
-    this.categories.set(reordered);
-
-    this.api.reorderCategories({
-      items: reordered.map(x => ({
-        id: x.id,
-        order: x.order,
-      })),
-    }).subscribe();
+  // Categories cannot be reordered until the backend exposes that operation.
+  dropCategory(_event: CdkDragDrop<MenuCategoryDto[]>) {
+    console.warn('Category reorder is not yet available');
   }
 
 dropMenu(event: CdkDragDrop<MenuFlatNode[]>) {

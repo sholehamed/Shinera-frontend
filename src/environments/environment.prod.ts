@@ -1,8 +1,9 @@
 export const environment = {
-  apiUrl: 'http://127.0.0.1:1002',
-  SubPath: '/Identity',
-  AppName: 'سامانه مدیریت کاربران',
-  scope: 'api',
+  // Same-origin reverse proxy: configure /api -> Shinera .NET API on IIS.
+  apiUrl: '/api',
+  SubPath: '',
+  AppName: 'شاینرا',
+  scope: 'openid profile email api offline_access',
   client_id: 'postman',
   grant_type: 'password',
-}
+};

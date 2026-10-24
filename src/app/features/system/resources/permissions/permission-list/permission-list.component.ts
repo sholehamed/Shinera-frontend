@@ -86,9 +86,20 @@ this.service.changeState(id).subscribe({
   }
 })
 }
-  loadList(query: GridQuery): void {
+  private lastQuery: GridQuery = { pageNumber: 1, pageSize: 10, filters: [] };
 
-    this.service.ChildpagedList(this.resourceId!,query).subscribe({
+  remove(id: string): void {
+    if (!confirm('آیا از حذف این مورد مطمئن هستید؟')) return;
+    this.service.delete(id).subscribe({
+      next: () => this.loadList(this.lastQuery),
+      error: () => alert('حذف انجام نشد؛ ممکن است این مورد وابستگی یا محدودیت دسترسی داشته باشد.'),
+    });
+  }
+
+  loadList(query: GridQuery): void {
+    this.lastQuery = query;
+
+    (this.resourceId ? this.service.ChildpagedList(this.resourceId, query) : this.service.pagedList(query)).subscribe({
       next: (res) => {
 
        this.list.set({

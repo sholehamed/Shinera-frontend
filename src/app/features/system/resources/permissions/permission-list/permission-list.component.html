@@ -11,7 +11,7 @@
     <app-text-filter [grid]="grid" field="title" label="جستجوی عنوان "></app-text-filter>
   </ng-template>
   <ng-template gridHeaderFilterTemplate="module">
-                               <app-select-filter [searchable]="true"  [grid]="grid" field="moduleId" (searchChanged)="searchModule($event)" placeholder="ماژول"  [options]="modules()" fi label="ماژول"></app-select-filter>
+                               <app-select-filter [searchable]="true"  [grid]="grid" field="moduleId" (searchChanged)="searchModule($event)" placeholder="ماژول"  [options]="modules()" label="ماژول"></app-select-filter>
 
   </ng-template>
 <ng-template [gridHeaderFilterTemplate]="'code'">
@@ -42,7 +42,7 @@
 
         <mat-menu #actionMenu="matMenu" class="card-header-menu" xPosition="before">
             <button mat-menu-item [routerLink]="row.id+'/edit'" type="button">ویرایش</button>
-            <button mat-menu-item type="button">حذف</button>
+            <button mat-menu-item type="button" (click)="remove(row.id)">حذف</button>
         </mat-menu>
     </ng-template>
 </app-grid>
