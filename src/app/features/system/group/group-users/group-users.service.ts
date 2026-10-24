@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { PagedList } from '../../../../shared/components/grid-components';
 
@@ -39,7 +39,9 @@ export class UserGroupApi {
     // if (req.search) params = params.set('search', req.search);
     // if (req.sort) params = params.set('sort', req.sort).set('dir', req.dir ?? 'asc');
 
-    return this.http.post<PagedList>(environment.apiUrl+ `/system/groups/${groupId}/members`, {  });
+    return this.http.post<PagedList>(environment.apiUrl+ `/system/groups/${groupId}/members`, {
+      pageNumber: req.page, pageSize: req.pageSize, search: req.search ?? ''
+    });
   }
 
   searchUsers(query: string, excludeGroupId: string): Observable<UserSummaryDto[]> {
@@ -55,10 +57,11 @@ export class UserGroupApi {
     return this.http.post<void>(environment.apiUrl+`/system/groups/${groupId}/addmembers`, { userIds });
   }
 
-  removeMembers(groupId: string, userIds: string[]): Observable<void> {
-    // اگر DELETE با body مشکل داشت: این را POST کنید
-    return this.http.request<void>('delete', `/api/user-groups/${groupId}/members`, {
-      body: { userIds }
-    });
+  removeMembers(groupId: string, userIds: string[]): Observable<unknown> {
+    if (!userIds.length) return of(void 0);
+    // Backend supports individually audited URI-scoped revocation, not bulk DELETE.
+    return forkJoin(userIds.map(userId =>
+      this.http.delete<void>(environment.apiUrl + `/system/groups/${groupId}/members/${userId}`)
+    ));
   }
 }
