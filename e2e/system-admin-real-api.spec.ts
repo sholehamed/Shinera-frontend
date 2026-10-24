@@ -126,14 +126,23 @@ test('real System menu category API supports create, update and delete, not dumm
 test('access-management menu links to real global Permission/API/UI resources; direct CRUD persists', async ({ page, request }) => {
   const token = await loginInBrowser(page);
   const headers = { Authorization: `Bearer ${token}` };
+  const seenRequests: string[] = [];
+  page.on('request', r => {
+    if (r.url().toLowerCase().includes('/pagedlist')) seenRequests.push(r.url());
+  });
   for (const slug of ['permissions', 'api-resources', 'ui-resources']) {
     await expect(page.locator(`app-sidebar a[href="/system/${slug}"]`)).toHaveCount(1);
+    const endpoint = slug === 'permissions' ? 'permissions' : slug === 'api-resources'
+      ? 'apiresources' : 'uiresources';
     const browserResponse = page.waitForResponse(r =>
-      r.url().includes(`/api/System/${slug === 'permissions' ? 'Permissions' : slug === 'api-resources' ? 'ApiResources' : 'UiResources'}/pagedList`) &&
-      r.request().method() === 'POST'
+      r.url().toLowerCase().includes(`/api/system/${endpoint}/pagedlist`) &&
+      r.request().method() === 'POST', { timeout: 12_000 }
     );
     await page.goto('/system/' + slug);
-    const response = await browserResponse;
+    await expect(page.locator('app-grid')).toBeVisible();
+    const response = await browserResponse.catch(error => {
+      throw new Error(`No real ${slug} grid paging response. Captured: ${seenRequests.join('; ')}. ${String(error)}`);
+    });
     expect(response.status(), await response.text()).toBe(200);
   }
 
