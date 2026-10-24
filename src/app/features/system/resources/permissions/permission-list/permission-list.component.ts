@@ -88,7 +88,7 @@ this.service.changeState(id).subscribe({
 }
   loadList(query: GridQuery): void {
 
-    this.service.ChildpagedList(this.resourceId!,query).subscribe({
+    (this.resourceId ? this.service.ChildpagedList(this.resourceId, query) : this.service.pagedList(query)).subscribe({
       next: (res) => {
 
        this.list.set({
