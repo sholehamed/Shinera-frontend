@@ -55,10 +55,11 @@ test('real System browser login loads protected dashboard, role CRUD and tenant 
   const stats = await dashboard.json();
   expect(stats.totalUsers).toBeGreaterThanOrEqual(1);
 
-  await page.goto('/system/tenants');
-  const tenants = await page.waitForResponse(resp =>
+  const tenantResponse = page.waitForResponse(resp =>
     resp.url().includes('/api/system/Tenants/pagedList') && resp.request().method() === 'POST'
   );
+  await page.goto('/system/tenants');
+  const tenants = await tenantResponse;
   expect(tenants.status()).toBe(200);
 
   await page.goto('/system/roles/create');
