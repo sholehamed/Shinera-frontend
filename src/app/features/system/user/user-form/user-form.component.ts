@@ -114,10 +114,10 @@ load(){
 }
 
   Submit(){
-    this.debugForm()
-    debugger
-
-    var t=this.form.invalid
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
 
 
     if(!this.update){
