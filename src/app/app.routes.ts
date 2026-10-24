@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { SignInComponent } from './shared/pages/auth/sign-in/sign-in.component';
-import { PanelLayoutComponent } from './shared/layouts/dashboard-layout/panel-layout.component';
+import { tenantSessionGuard } from './shared/guards/tenant-session.guard';
 
 export const routes: Routes = [
   {
@@ -10,6 +10,12 @@ export const routes: Routes = [
   {
     path: 'system',
     loadChildren: () => import('./features/system/system.routes').then((x) => x.default),
+  },
+  {
+    path: 'dashboard',
+    canActivate: [tenantSessionGuard],
+    loadComponent: () => import('./features/app/tenant-dashboard.component')
+      .then(x => x.TenantDashboardComponent),
   },
   {
     path: 'auth',
