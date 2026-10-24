@@ -6,7 +6,7 @@ import { BaseService } from "../../../../shared/services/base.service";
 })
 export class UiResourcesService extends BaseService{
     constructor(){
-        super('/Identity/UiResources/')
+        super('/system/UiResources/')
     }
  getLookup(text?:string){
       let params = new HttpParams()
