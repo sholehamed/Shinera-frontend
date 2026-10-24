@@ -67,12 +67,12 @@ export class SidebarComponent implements OnInit {
 
         this.menuService.getMenuByRole(roleId).subscribe({
             next: menuSections => {
-                this.menuSections.set(menuSections.length ? menuSections : this.systemFallbackMenu());
+                this.menuSections.set(this.addAccessManagementLinks(menuSections.length ? menuSections : this.systemFallbackMenu()));
                 this.isMenuLoading.set(false);
             },
             error: error => {
                 console.error('Failed to load sidebar menu', error);
-                this.menuSections.set(this.systemFallbackMenu());
+                this.menuSections.set(this.addAccessManagementLinks(this.systemFallbackMenu()));
                 this.isMenuLoading.set(false);
             }
         });
@@ -88,14 +88,39 @@ export class SidebarComponent implements OnInit {
                     this.selectedRole.set(roles[0]);
                     this.loadMenu(roles[0].id);
                 } else {
-                    this.menuSections.set(this.systemFallbackMenu());
+                    this.menuSections.set(this.addAccessManagementLinks(this.systemFallbackMenu()));
                 }
             },
             error: error => {
                 console.error('Failed to load sidebar roles', error);
-                this.menuSections.set(this.systemFallbackMenu());
+                this.menuSections.set([]);
             }
         });
+    }
+
+    /** Curated System navigation: merge into existing dynamic menu rather than
+     * replacing configured menus, and never add duplicate destinations.
+     * All endpoints still enforce SystemAdministrator on the server. */
+    private addAccessManagementLinks(sections: MenuCategoryDto[]): MenuCategoryDto[] {
+        if (!this.router.url.startsWith('/system/') ||
+            this.router.url.startsWith('/system/auth/')) return sections;
+        const links = [
+            { title: 'منابع', icon: 'category', route: '/system/resources', childs: [] },
+            { title: 'منابع API', icon: 'api', route: '/system/api-resources', childs: [] },
+            { title: 'منابع رابط کاربری', icon: 'web', route: '/system/ui-resources', childs: [] },
+            { title: 'مجوزها', icon: 'verified_user', route: '/system/permissions', childs: [] },
+        ];
+        const existing = new Set<string>();
+        const collect = (items: MenuCategoryDto[ 'items' ]) => {
+            for (const item of items) {
+                if (item.route) existing.add(item.route.replace(/\\/$/, '').toLowerCase());
+                collect(item.childs ?? []);
+            }
+        };
+        sections.forEach(section => collect(section.items));
+        const missing = links.filter(link => !existing.has(link.route.toLowerCase()));
+        if (!missing.length) return sections;
+        return [...sections, { title: 'مدیریت دسترسی', items: missing }];
     }
 
     /** This is navigation only, not an authorization source. The backend
