@@ -20,7 +20,8 @@ export const appConfig: ApplicationConfig = {
       const host = window.location.hostname.toLowerCase();
       const suffix = '.' + environment.workspaceBaseDomain.toLowerCase();
       const slug = host.endsWith(suffix) ? host.slice(0, -suffix.length) : '';
-      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return;
+      const reserved = new Set(['www', 'api', 'admin', 'system', 'help', 'blog', 'cdn', 'mail', 'public', 'support']);
+      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || reserved.has(slug)) return;
       return inject(TenantContextService).initialize();
     }),
     provideHttpClient(withInterceptors([apiAuthInterceptor])),
