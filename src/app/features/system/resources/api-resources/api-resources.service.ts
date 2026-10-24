@@ -17,6 +17,6 @@ export class ApiResourcesService extends BaseService{
                return this.http.get<any[]>(this.baseUrl+'lookup',{responseType:'json',params:params})
     }
     sync(resourceId?:string){
-               return this.http.patch(this.baseUrl+`${resourceId}/sync`,{responseType:'json'})
+               return this.http.patch(this.baseUrl+`${resourceId}/sync`, {})
     }
 }
