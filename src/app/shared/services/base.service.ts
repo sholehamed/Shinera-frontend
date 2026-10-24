@@ -25,6 +25,9 @@ protected http:HttpClient=inject(HttpClient)
         const model=form.getRawValue() 
        return this.http.put(this.baseUrl+id,model,{responseType:'json'})
     }
+    delete(id:string){
+        return this.http.delete<void>(this.baseUrl+id)
+    }
     getById(id?:string){
                return this.http.get(this.baseUrl+id,{responseType:'json'})
     }
