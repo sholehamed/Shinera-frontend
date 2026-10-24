@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, inject, Input, signal } from '@angular/core';
+import { AfterViewInit, Component, inject, Input, signal, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -28,13 +28,12 @@ import { CustomizerSettingsService } from '../../../../../shared/services/custom
   templateUrl: './permission-form.component.html',
   styleUrl: './permission-form.component.scss',
 })
-export class PermissionFormComponent implements AfterViewInit {
+export class PermissionFormComponent implements AfterViewInit, OnInit {
   @Input() permissionId?:string;
   @Input() resourceId?:string;
 
   ngAfterViewInit(): void {
     this.searchResource()
-    this.searchApiUiResource()
   }
   resources=signal<any[]|null>([])
   searchResource(text?:string){
@@ -43,10 +42,13 @@ this.resourceService.getLookup().subscribe({
     })
   }
    apiUiResource=signal<any[]|null>([])
-  searchApiUiResource(text?:string){
-this.resourceService.getgroupedLookup(this.resourceId!).subscribe({
-      next:x=>{this.apiUiResource.set(x)}
-    })
+  searchApiUiResource(resourceId?: string) {
+    const id = resourceId ?? this.userForm.controls.resourceId.value;
+    if (!id) { this.apiUiResource.set([]); return; }
+    this.resourceService.getgroupedLookup(id).subscribe({
+      next: options => this.apiUiResource.set(options),
+      error: () => this.apiUiResource.set([])
+    });
   }
 themeService:CustomizerSettingsService=inject(CustomizerSettingsService)
 _loc:Location=inject(Location)
@@ -59,6 +61,10 @@ back(){
              this._loc.back()
   }
 ngOnInit() {
+   this.userForm.controls.resourceId.valueChanges.subscribe(id => {
+     this.userForm.controls.permissionResources.setValue([]);
+     this.searchApiUiResource(id);
+   });
    if (this.resourceId) {
     this.userForm.patchValue({
       resourceId: this.resourceId
@@ -76,6 +82,7 @@ load(){
      next: (item:any) => {
       
       this.userForm.patchValue(item);
+      this.searchApiUiResource(item.resourceId);
     },
   })
 }
@@ -84,7 +91,7 @@ userForm = new FormGroup({
       nonNullable: true,
       validators: [Validators.required],
     }),
-    permissionResources: new FormControl('', {
+    permissionResources: new FormControl<{ id: string; type: string }[]>([], {
       nonNullable: true,
       validators: [],
     }),
@@ -109,6 +116,7 @@ userForm = new FormGroup({
 );
  
   Submit(){
+    if (this.userForm.invalid) { this.userForm.markAllAsTouched(); return; }
     if(!this.update){
       this.service.create(this.userForm).subscribe({
         next:value=>{
