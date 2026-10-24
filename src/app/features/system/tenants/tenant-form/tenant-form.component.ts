@@ -29,7 +29,7 @@ import { CustomizerSettingsService } from '../../../../shared/services/customize
   styleUrl: './tenant-form.component.scss',
 })
 export class TenantFormComponent extends BaseFormComponent implements OnInit {
-  override backUrl?: any[]=['/admin/super/tenants'];
+  override backUrl?: any[]=['/system/tenants'];
   @Input() tenantId?:string
 themeService:CustomizerSettingsService=inject(CustomizerSettingsService)
 _loc:Location=inject(Location)
