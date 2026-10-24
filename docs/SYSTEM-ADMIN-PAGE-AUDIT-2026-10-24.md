@@ -39,7 +39,7 @@ The frontend now registers a functional interceptor that only attaches current a
 - Category drag reorder (missing backend contract)
 - Broad Tenant-specific member management (new domain model, not System-admin placeholders)
 - Real production admin bootstrap/feature-cutover and live customer deployment
-- More browser CRUD E2E: Modules, Resources, Permissions, GroupMembers, Menu UI
+- More positive Angular form-submit browser E2E and broader CRUD (Modules, Resources, GroupMembers and menu editor UI). Permission/API/UI Resource **API CRUD and browser navigation/paging are now covered**
 - Dynamic menu ownership and access for non-SuperAdmin System users
 
 Both latest frontend Build/Unit and fullstack E2E are **green**. The branch remains **Draft pending final cross-repository review and explicit merge authorization**, including a second run after restoring the E2E backend checkout to `main`. No Production mutations.
@@ -53,7 +53,7 @@ Existing Permission, ApiResource and UiResource pages are **retained**. The Syst
 
 **Repaired existing UI:** CRUD delete actions now make real authenticated DELETE requests and reload the current page; resource-scoped API sync is available only with a valid resource context. UI Resource type choices match the backend enumeration exactly (`PAGE=0, ACTION=1, FIELD=2, WIDGET=3`) and obsolete popup/debug route discovery was removed. UI Resource model fields match the persistence entity rather than introducing fictitious Name/Scope/Deprecated options. The API Resource form requires a real HTTP verb and preserves edit state. Permission linked API/UI Resource lookup now follows selected Resource rather than querying an undefined identifier, and links submit as a real array. Form validation prevents empty submissions.
 
-**New E2E** in `e2e/system-admin-real-api.spec.ts` covers access navigation, all three global/scoped lists, direct Create/Get/Update/Delete for API/UI Resource and Permission with a disposable Module/Resource fixture, and permission links to both resource types. Verify CI on the latest executable commit before declaring the extension PASS. The backend branch is pinned in frontend fullstack workflow until backend PR #32 merges; restore the backend checkout to main and rerun before frontend merge.
+**New E2E** in `e2e/system-admin-real-api.spec.ts` covers access navigation, all three global/scoped lists, direct Create/Get/Update/Delete for API/UI Resource and Permission with a disposable Module/Resource fixture, and permission links to both resource types. **Verified PASS at executable head `67acb0305586869e7d60b0966d18b77939a081e3`: [Full-stack E2E 40096193047](https://github.com/sholehamed/Shinera-frontend/actions/runs/40096193047) completed 17/17 real Chromium/ASP.NET Core/SQL Server checks. [Frontend Build/Unit 40096193049](https://github.com/sholehamed/Shinera-frontend/actions/runs/40096193049) passed 15/15 unit cases. Later documentation-only commits have not changed executable behavior. The backend branch is pinned in frontend fullstack workflow until backend PR #32 merges; restore the backend checkout to main and rerun before frontend merge.
 
 **Still deferred:** complete positive form-level browser automation and recovery UX across every screen, underlying platform user safe-write semantics, per-operation granular privileges in Production, and unsupported menu category reorder. Do not call any of these complete solely because CRUD endpoints exist.
 
