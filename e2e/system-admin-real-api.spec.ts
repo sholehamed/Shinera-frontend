@@ -121,3 +121,107 @@ test('real System menu category API supports create, update and delete, not dumm
     expect([200, 204]).toContain(removed.status());
   }
 });
+
+
+test('access-management menu links to real global Permission/API/UI resources; direct CRUD persists', async ({ page, request }) => {
+  const token = await loginInBrowser(page);
+  const headers = { Authorization: `Bearer ${token}` };
+  for (const slug of ['permissions', 'api-resources', 'ui-resources']) {
+    await expect(page.locator(`app-sidebar a[href="/system/${slug}"]`)).toHaveCount(1);
+    const browserResponse = page.waitForResponse(r =>
+      r.url().includes(`/api/System/${slug === 'permissions' ? 'Permissions' : slug === 'api-resources' ? 'ApiResources' : 'UiResources'}/pagedList`) &&
+      r.request().method() === 'POST'
+    );
+    await page.goto('/system/' + slug);
+    const response = await browserResponse;
+    expect(response.status(), await response.text()).toBe(200);
+  }
+
+  const unique = String(Date.now());
+  const created: Array<{ endpoint: string; id: string }> = [];
+  async function create(endpoint: string, data: Record<string, unknown>): Promise<string> {
+    const response = await request.post(api + '/' + endpoint, { headers, data });
+    expect(response.status(), `${endpoint}: ${await response.text()}`).toBe(201);
+    const id = await response.json() as string;
+    expect(id).toMatch(/^[0-9a-f-]{36}$/i);
+    created.push({ endpoint, id });
+    return id;
+  }
+  async function updateAndVerify(endpoint: string, id: string, data: Record<string, unknown>) {
+    const updated = await request.put(`${api}/${endpoint}/${id}`, { headers, data });
+    expect(updated.status(), `${endpoint}: ${await updated.text()}`).toBe(204);
+    const read = await request.get(`${api}/${endpoint}/${id}`, { headers });
+    expect(read.status(), await read.text()).toBe(200);
+    return await read.json();
+  }
+  try {
+    const moduleId = await create('Modules', {
+      code: 'E2EMOD' + unique, title: 'Test access module', sortOrder: 90, isActive: true
+    });
+    const resourceId = await create('Resources', {
+      moduleId, code: 'E2ERES' + unique, title: 'Test access resource',
+      sortOrder: 91, isActive: true
+    });
+    const apiId = await create('ApiResources', {
+      resourceId, key: 'E2EAPI' + unique, title: 'API test',
+      routeTemplate: '/api/system/E2ETest', httpMethod: 4, source: 1,
+      allowAnonymous: false, isActive: true, isDeprecated: false
+    });
+    const uiId = await create('UiResources', {
+      resourceId, key: 'E2EUI' + unique, title: 'UI test',
+      name: 'E2E UI', type: 0, isActive: true
+    });
+    const permissionId = await create('Permissions', {
+      resourceId, code: 'E2EACCESS.' + unique, name: 'E2E access permission',
+      description: 'Disposable integration fixture', isActive: true,
+      permissionResources: [{ type: 'API', id: apiId }, { type: 'UI', id: uiId }]
+    });
+    const checkCases = [
+      ['Permissions', 'code', 'E2EACCESS.' + unique],
+      ['ApiResources', 'key', 'E2EAPI' + unique],
+      ['UiResources', 'key', 'E2EUI' + unique],
+    ] as const;
+    for (const [endpoint, field, value] of checkCases) {
+      const all = await request.post(`${api}/${endpoint}/pagedList`, {
+        headers, data: { pageNumber: 1, pageSize: 100, filters: [] }
+      });
+      expect(all.status(), await all.text()).toBe(200);
+      expect((await all.json()).data.some((item: Record<string, unknown>) => item[field] === value))
+        .toBe(true);
+      const scoped = await request.post(`${api}/${endpoint}/${resourceId}/pagedList`, {
+        headers, data: { pageNumber: 1, pageSize: 100, filters: [] }
+      });
+      expect(scoped.status(), await scoped.text()).toBe(200);
+      expect((await scoped.json()).data.some((item: Record<string, unknown>) => item[field] === value))
+        .toBe(true);
+    }
+
+    const updatedApi = await updateAndVerify('ApiResources', apiId, {
+      resourceId, key: 'E2EAPI' + unique, title: 'API edited',
+      routeTemplate: '/api/system/E2ETest', httpMethod: 4, source: 1,
+      allowAnonymous: false, isActive: true, isDeprecated: false
+    });
+    expect(updatedApi.title).toBe('API edited');
+    const updatedUi = await updateAndVerify('UiResources', uiId, {
+      resourceId, key: 'E2EUI' + unique, name: 'E2E UI', title: 'UI edited',
+      type: 1, isActive: true
+    });
+    expect(updatedUi.title).toBe('UI edited');
+    const updatedPermission = await updateAndVerify('Permissions', permissionId, {
+      resourceId, code: 'E2EACCESS.' + unique, name: 'E2E permission edited',
+      description: 'Update persisted', isActive: true,
+      permissionResources: [{ type: 'API', id: apiId }, { type: 'UI', id: uiId }]
+    });
+    expect(updatedPermission.name).toBe('E2E permission edited');
+    expect(updatedPermission.permissionResources).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'API', id: apiId }),
+      expect.objectContaining({ type: 'UI', id: uiId })
+    ]));
+  } finally {
+    // Delete child grants first; these disposable fixtures never target Production.
+    for (const { endpoint, id } of created.reverse()) {
+      const deleted = await request.delete(`${api}/${endpoint}/${id}`, { headers });
+      expect([200, 204]).toContain(deleted.status());
+    }
+  }
+});
