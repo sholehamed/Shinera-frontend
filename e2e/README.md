@@ -18,7 +18,9 @@ Then run `npm install`, `npx playwright install chromium`, `npm run test:e2e`. P
 
 ## Scope and limitations
 
-This first stage tests the public landing, system login form/captcha, the real captcha API and authorization on the role lookup. It does **not** yet claim to verify successful admin login, tenant isolation or account lifecycle. Those require isolated test data and, where necessary, correction of existing authorization behavior. Add positive and negative tests for those contracts before enabling protected production-like workflows.
+The suite now includes **real positive System administrator browser login** with CAPTCHA, authenticated dashboard and tenant paging, browser Role create/edit/read/delete, direct MenuCategory create/update/delete, login-context route guards and OAuth lifecycle checks. The latest verified cross-repository run on the System Admin branch passed **16/16 Playwright tests** ([CI 40092435108](https://github.com/sholehamed/Shinera-frontend/actions/runs/40092435108)). Angular build and unit tests passed **15/15** ([CI 40092435121](https://github.com/sholehamed/Shinera-frontend/actions/runs/40092435121)).
+
+Tests run against the pinned **paired backend Draft PR #32 branch** (not mocks), with a disposable SQL Server container; this checkout must be restored to backend `main` and E2E rerun after backend PR is merged. System User write endpoints are NOT claimed safe or browser-tested and their UI is deliberately disabled until the System-account contract is fixed. Full permission, resource, group membership and multi-tenant customer workflows still require additional E2E coverage. No Production database is used.
 
 CI currently uses `npm install` because this repository has no committed package lockfile. A future change should generate and commit `package-lock.json` then use `npm ci` for reproducible installs.
 
