@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { delay, Observable, of } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 export type BillingCycle = 'monthly' | 'yearly';
 
@@ -15,11 +16,11 @@ export interface CheckoutPlan {
     features: string[];
 }
 
+/** Public signup request: no client-provided TenantId, OwnerId or role IDs. */
 export interface SignupCheckoutPayload {
     planKey: string;
     billingCycle: BillingCycle;
     promoCode: string | null;
-
     tenant: {
         name: string;
         slug: string;
@@ -27,7 +28,6 @@ export interface SignupCheckoutPayload {
         timezone: string;
         currency: string;
     };
-
     businessProfile: {
         displayName: string;
         activityType: string;
@@ -37,7 +37,6 @@ export interface SignupCheckoutPayload {
         postalCode: string | null;
         instagram: string | null;
     };
-
     owner: {
         firstName: string;
         lastName: string;
@@ -45,47 +44,40 @@ export interface SignupCheckoutPayload {
         email: string;
         password: string;
     };
-
     branch: {
         name: string;
         phone: string;
         city: string;
         address: string;
     } | null;
-
-    metadata: {
-        source: string;
-        locale: string;
-    };
+    acceptTerms: boolean;
+    acceptPrivacy: boolean;
+    captchaToken: string;
+    captchaCode: string;
 }
 
+/** Provisioning success does NOT represent a verified payment or active subscription. */
 export interface SignupCheckoutResponse {
-    checkoutId: string;
-    paymentUrl: string;
-    mode: 'mock' | 'gateway';
+    tenantId: string;
+    ownerUserId: string;
+    mainBranchId: string;
+    slug: string;
+    accountUsername: string;
+    planStatus: 'pending_activation';
 }
 
 @Injectable({ providedIn: 'root' })
 export class SignupCheckoutService {
     private readonly http = inject(HttpClient);
+    private readonly endpoint = environment.apiUrl.replace(/\/$/, '') + '/public/signup';
 
-    // Keep true until backend endpoint is ready.
-    private readonly useMock = true;
+    isSlugAvailable(slug: string): Observable<{ available: boolean }> {
+        return this.http.get<{ available: boolean }>(this.endpoint + '/slug-available', {
+            params: new HttpParams().set('slug', slug.trim().toLowerCase())
+        });
+    }
 
     startCheckout(payload: SignupCheckoutPayload): Observable<SignupCheckoutResponse> {
-        if (this.useMock) {
-            return of({
-                checkoutId: crypto.randomUUID(),
-                paymentUrl: '/mock-payment',
-                mode: 'mock' as const
-            }).pipe(delay(850));
-        }
-
-        // Suggested endpoint:
-        // POST /api/public/signup/checkout
-        return this.http.post<SignupCheckoutResponse>(
-            '/api/public/signup/checkout',
-            payload
-        );
+        return this.http.post<SignupCheckoutResponse>(this.endpoint + '/checkout', payload);
     }
 }
