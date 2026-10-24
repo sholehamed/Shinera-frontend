@@ -2,8 +2,7 @@
   <section class="intro">
     <h1>کسب‌وکارت را بساز، پلنت را انتخاب کن و شروع کن.</h1>
     <p>
-      اطلاعات لازم را در چند مرحله کوتاه وارد کن. قبل از پرداخت می‌توانی همه‌چیز را دوباره بررسی و
-      اصلاح کنی.
+      اطلاعات را وارد کن تا حساب مالک و فضای کاری واقعی ساخته شود. فعال‌سازی اشتراک پولی در مرحله جداگانه انجام خواهد شد.
     </p>
   </section>
 
@@ -400,10 +399,9 @@
                 <div class="section-head simple">
                   <div>
                     <span class="section-kicker">تأیید نهایی</span>
-                    <h2>قبل از پرداخت، سفارش را مرور کن</h2>
+                    <h2>اطلاعات را مرور کن و فضای کاری را بساز</h2>
                     <p>
-                      ایجاد Tenant، کاربر مالک، BusinessProfile، شعبه و Subscription باید بعد از
-                      تأیید قطعی پرداخت در Backend انجام شود.
+                      حساب مالک، اطلاعات کسب‌وکار و شعبه اصلی هم‌زمان در سرور ثبت می‌شوند. انتخاب پلن هنوز پرداخت یا فعال‌سازی اشتراک نیست.
                     </p>
                   </div>
                 </div>
@@ -454,7 +452,7 @@
                 <div class="payment-box">
                   <div class="payment-head">
                     <div>
-                      <span class="section-kicker">مبلغ قابل پرداخت</span>
+                      <span class="section-kicker">برآورد هزینه پلن (غیرقطعی)</span>
                       <h3>
                         {{ formatMoney(selectedPrice) }}
                         <small>تومان</small>
@@ -463,7 +461,7 @@
 
                     <span class="payment-method">
                       <span class="material-symbols-outlined">credit_card</span>
-                      درگاه پرداخت امن
+                      بدون پرداخت در این مرحله
                     </span>
                   </div>
 
@@ -475,23 +473,17 @@
                     <mat-checkbox formControlName="acceptPrivacy">
                       سیاست حریم خصوصی و پردازش اطلاعات را مطالعه کرده‌ام.
                     </mat-checkbox>
+                    <app-captcha formControlName="captchaCode" (tokenChange)="onCaptchaTokenChange($event)" />
                   </div>
 
                   @if (form.controls.legal.touched && form.controls.legal.invalid) {
                     <p class="form-error">برای ادامه، تأیید هر دو مورد الزامی است.</p>
                   }
 
-                  @if (mockCheckoutId()) {
-                    <div class="mock-success">
+                  @if (signupResult()) {
+                    <div class="mock-success" role="status">
                       <span class="material-symbols-outlined">check_circle</span>
-                      <div>
-                        <strong>Checkout ماک ساخته شد.</strong>
-                        <small>ID: {{ mockCheckoutId() }}</small>
-                        <p>
-                          Payload در Console ثبت شده است. وقتی Backend آماده شد، useMock را false
-                          کن.
-                        </p>
-                      </div>
+                      <div><strong>فضای کاری ساخته شد. در حال انتقال به صفحه ورود...</strong></div>
                     </div>
                   }
                 </div>
@@ -499,6 +491,10 @@
             }
           }
         </div>
+
+        @if (signupError()) {
+          <p class="form-error" role="alert" style="margin: 12px 24px">{{ signupError() }}</p>
+        }
 
         <footer class="wizard-actions">
           <button
@@ -513,17 +509,17 @@
           </button>
 
           @if (currentStep() < steps.length - 1) {
-            <button mat-flat-button type="button" class="primary-action" (click)="next()">
-              ادامه
+            <button mat-flat-button type="button" class="primary-action" [disabled]="checkingSlug() || submitting()" (click)="next()">
+              {{ checkingSlug() ? 'در حال بررسی آدرس...' : 'ادامه' }}
               <span class="material-symbols-outlined">arrow_back</span>
             </button>
           } @else {
-            <button mat-flat-button [disabled]="submitting()">
+            <button mat-flat-button [disabled]="submitting() || !!signupResult()">
               @if (!submitting()) {
                 <span class="material-symbols-outlined" matButtonIcon>lock</span>
               }
               <span>
-                {{ submitting() ? 'در حال ساخت سفارش...' : 'رفتن به پرداخت' }}
+                {{ submitting() ? 'در حال ساخت فضای کاری...' : 'ساخت فضای کاری' }}
               </span>
             </button>
           }
@@ -565,13 +561,13 @@
           </div>
 
           <div>
-            <span>مالیات</span>
-            <strong>در Backend محاسبه شود</strong>
+            <span>وضعیت اشتراک</span>
+            <strong>در انتظار فعال‌سازی</strong>
           </div>
         </div>
 
         <div class="summary-total">
-          <span>مبلغ اشتراک</span>
+          <span>هزینه نمایشی پلن</span>
           <div>
             <strong>{{ formatMoney(selectedPrice) }}</strong>
             <small>تومان</small>
@@ -581,8 +577,7 @@
         <div class="summary-note">
           <span class="material-symbols-outlined">info</span>
           <p>
-            اطلاعات نهایی تنها پس از تأیید پرداخت ساخته می‌شوند. برگشت مرورگر از درگاه به‌تنهایی
-            معیار موفقیت پرداخت نیست.
+            فضای کاری و شعبه اصلی اکنون ساخته می‌شوند؛ هیچ مبلغی در این مرحله دریافت نمی‌شود. قیمت‌ها صرفاً نمایشی هستند و اشتراک پولی هنوز فعال نمی‌شود.
           </p>
         </div>
 
@@ -597,7 +592,7 @@
           </div>
           <div>
             <span class="material-symbols-outlined">bolt</span>
-            شروع سریع بعد از پرداخت
+            ورود به فضای کاری بعد از ثبت‌نام
           </div>
         </div>
       </div>

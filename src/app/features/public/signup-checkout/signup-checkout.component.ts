@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal, ViewChild } from '@angular/core';
 import {
     AbstractControl,
     FormBuilder,
@@ -10,6 +10,9 @@ import {
 } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
+import { CaptchaComponent } from '../../../shared/components/share-captcha/share-captcha.component';
 import { finalize } from 'rxjs';
 
 import { MatButtonModule } from '@angular/material/button';
@@ -23,6 +26,7 @@ import {
     BillingCycle,
     CheckoutPlan,
     SignupCheckoutPayload,
+    SignupCheckoutResponse,
     SignupCheckoutService
 } from './signup-checkout.service';
 
@@ -45,7 +49,8 @@ const matchFields = (first: string, second: string): ValidatorFn => {
         MatFormFieldModule,
         MatInputModule,
         MatSelectModule,
-        MatSlideToggleModule
+        MatSlideToggleModule,
+        CaptchaComponent
     ],
     templateUrl: './signup-checkout.component.html',
     styleUrl: './signup-checkout.component.scss'
@@ -58,16 +63,24 @@ export class SignupCheckoutComponent {
 
     readonly currentStep = signal(0);
     readonly submitting = signal(false);
-    readonly mockCheckoutId = signal<string | null>(null);
+    readonly signupError = signal<string | null>(null);
+    readonly checkingSlug = signal(false);
+    readonly signupResult = signal<SignupCheckoutResponse | null>(null);
+    private captchaToken = '';
+    @ViewChild(CaptchaComponent) captchaComponent?: CaptchaComponent;
+
+    onCaptchaTokenChange(token: string): void {
+        this.captchaToken = token;
+    }
 
     readonly steps = [
         { title: 'انتخاب پلن', subtitle: 'پلن و دوره پرداخت' },
         { title: 'حساب مالک', subtitle: 'اطلاعات ورود و تماس' },
         { title: 'کسب‌وکار', subtitle: 'فضای کاری و شعبه' },
-        { title: 'مرور و پرداخت', subtitle: 'تأیید نهایی سفارش' }
+        { title: 'مرور و ساخت', subtitle: 'ایجاد حساب و فضای کاری' }
     ];
 
-    // Mock plans — replace by GET /api/public/plans later.
+    // Display-only indicative prices; the backend provisions without billing/activation.
     readonly plans: CheckoutPlan[] = [
         {
             key: 'solo',
@@ -165,7 +178,8 @@ export class SignupCheckoutComponent {
 
         legal: this.fb.nonNullable.group({
             acceptTerms: [false, Validators.requiredTrue],
-            acceptPrivacy: [false, Validators.requiredTrue]
+            acceptPrivacy: [false, Validators.requiredTrue],
+            captchaCode: ['', Validators.required]
         })
     });
 
@@ -225,13 +239,32 @@ export class SignupCheckoutComponent {
 
     next(): void {
         const step = this.currentStep();
+        this.signupError.set(null);
+        if (!this.validateStep(step)) return;
 
-        if (!this.validateStep(step)) {
+        if (step === 2) {
+            this.checkingSlug.set(true);
+            const slug = this.form.controls.workspace.controls.slug.value;
+            this.checkoutService.isSlugAvailable(slug)
+                .pipe(finalize(() => this.checkingSlug.set(false)), takeUntilDestroyed(this.destroyRef))
+                .subscribe({
+                    next: ({ available }) => {
+                        if (!available) {
+                            this.signupError.set('این آدرس فضای کاری قبلاً ثبت شده یا رزرو شده است.');
+                            return;
+                        }
+                        this.advance();
+                    },
+                    error: () => this.signupError.set('بررسی آدرس فضای کاری انجام نشد. دوباره تلاش کنید.')
+                });
             return;
         }
+        this.advance();
+    }
 
-        if (step < this.steps.length - 1) {
-            this.currentStep.set(step + 1);
+    private advance(): void {
+        if (this.currentStep() < this.steps.length - 1) {
+            this.currentStep.update(step => step + 1);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }
@@ -244,40 +277,44 @@ export class SignupCheckoutComponent {
     }
 
     submit(): void {
-        if (!this.validateStep(3)) {
-            return;
-        }
+        if (this.submitting() || !this.validateStep(3)) return;
 
         this.form.markAllAsTouched();
-
-        if (this.form.invalid) {
+        if (this.form.invalid) return;
+        if (!this.captchaToken) {
+            this.signupError.set('لطفاً کد امنیتی را دوباره دریافت کنید.');
             return;
         }
 
-        const payload = this.buildPayload();
-
-        // Useful while backend is not connected.
-        console.group('Shinera checkout payload');
-        console.log(payload);
-        console.groupEnd();
-
+        this.signupError.set(null);
         this.submitting.set(true);
-        this.mockCheckoutId.set(null);
-
-        this.checkoutService
-            .startCheckout(payload)
-            .pipe(finalize(() => this.submitting.set(false)))
+        this.checkoutService.startCheckout(this.buildPayload())
+            .pipe(finalize(() => this.submitting.set(false)), takeUntilDestroyed(this.destroyRef))
             .subscribe({
                 next: response => {
-                    if (response.mode === 'mock') {
-                        this.mockCheckoutId.set(response.checkoutId);
-                        return;
-                    }
-
-                    window.location.assign(response.paymentUrl);
+                    this.signupResult.set(response);
+                    // No password/token travels in the URL. Login is a separate OAuth flow.
+                    const baseDomain = environment.workspaceBaseDomain;
+                    const host = `${response.slug}.${baseDomain}`;
+                    const port = window.location.port ? ':' + window.location.port : '';
+                    const workspaceLogin = `${window.location.protocol}//${host}${port}/auth/login?registered=1`;
+                    window.location.assign(workspaceLogin);
                 },
-                error: error => {
-                    console.error('Checkout failed', error);
+                error: (error: HttpErrorResponse) => {
+                    if (error.status === 409) {
+                        this.signupError.set('این آدرس قبلاً ثبت شده است. برگردید و آدرس دیگری انتخاب کنید.');
+                    } else if (error.status === 429) {
+                        this.signupError.set('درخواست‌های زیادی ارسال شده است. کمی بعد دوباره امتحان کنید.');
+                    } else if (error.error?.errors?.captchaCode) {
+                        this.signupError.set('کد امنیتی اشتباه یا منقضی شده است.');
+                    } else if (error.status === 400) {
+                        this.signupError.set('اطلاعات ثبت‌نام معتبر نیست. فیلدها را بررسی کنید.');
+                    } else {
+                        this.signupError.set('ساخت فضای کاری انجام نشد. اتصال سرور را بررسی و مجدداً تلاش کنید.');
+                    }
+                    this.captchaToken = '';
+                    this.form.controls.legal.controls.captchaCode.setValue('');
+                    this.captchaComponent?.reload();
                 }
             });
     }
@@ -396,10 +433,10 @@ export class SignupCheckoutComponent {
                   }
                 : null,
 
-            metadata: {
-                source: 'shinera-landing',
-                locale: 'fa-IR'
-            }
+            acceptTerms: raw.legal.acceptTerms,
+            acceptPrivacy: raw.legal.acceptPrivacy,
+            captchaToken: this.captchaToken,
+            captchaCode: raw.legal.captchaCode
         };
     }
 }

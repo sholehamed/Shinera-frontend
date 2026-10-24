@@ -55,6 +55,12 @@
                     </div>
 
 
+                    @if (hasJustRegistered) {
+                        <p role="status" style="padding: 12px 16px; border: 1px solid #2e8b57; border-radius: 10px; color: #2e8b57">
+                            فضای کاری ساخته شد. با شماره موبایل و رمز عبوری که ثبت کردی وارد شو.
+                        </p>
+                    }
+
                     <!-- Form -->
                     <form
                         [formGroup]="loginForm"
@@ -65,8 +71,8 @@
 
                             <app-custom-input
                                 type="text"
-                                label="نام کاربری"
-                                placeholder="نام کاربری خود را وارد کنید"
+                                [label]="login_context === 'tenant' ? 'شماره موبایل' : 'نام کاربری'"
+                                [placeholder]="login_context === 'tenant' ? 'شماره موبایل ثبت‌شده را وارد کنید' : 'نام کاربری خود را وارد کنید'"
                                 [dir]="'rtl'"
                                 controlName="username">
                             </app-custom-input>
@@ -142,7 +148,7 @@
                             </span>
 
                             <a
-                                routerLink="/auth/sign-up"
+                                [href]="registrationUrl"
                                 class="register-link"
                             >
                                 ثبت نام

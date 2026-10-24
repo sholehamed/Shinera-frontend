@@ -36,6 +36,15 @@ export class SignInComponent {
 @Input()login_context:string='tenant'
 @Input() returnUrl!:string
 router:Router=inject(Router)
+  readonly registrationUrl =
+    window.location.protocol + '//' + environment.workspaceBaseDomain +
+    (window.location.port ? ':' + window.location.port : '') + '/start';
+
+  get hasJustRegistered(): boolean {
+    return this.router.parseUrl(this.router.url).queryParams['registered'] === '1' &&
+      this.login_context === 'tenant';
+  }
+
   AppName = environment.AppName;
   ApiUrl = environment.apiUrl;
 
